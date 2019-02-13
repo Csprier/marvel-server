@@ -13,9 +13,12 @@ router.post('/', (req, res, next) => {
 	const missingField = requiredFields.find(field => !(field in req.body));
 
 	if (missingField) {
-		const err = new Error(`Missing ${missingField} in request body`);
-		err.status = 422;
-		return next(err);
+		return res.status(422).json({
+			code: 422,
+			reason: 'ValidationError',
+			message: 'Missing field',
+			location: missingField
+		});
 	}
 
 	// Check that all string fields are strings
@@ -23,9 +26,12 @@ router.post('/', (req, res, next) => {
 	const nonStringField = stringFields.find(field => field in req.body && typeof req.body[field] !== 'string');
 
 	if (nonStringField) {
-		const err = new Error(`Field: '${nonStringField}' must be type String`);
-		err.status = 422;
-		return next(err);
+		return res.status(422).json({
+			code: 422,
+			reason: 'ValidationError',
+			message: 'Incorrect field type: expected string',
+			location: nonStringField
+		});
 	}
 
 	// Check that fields are trimmed as needed
@@ -33,17 +39,23 @@ router.post('/', (req, res, next) => {
 	const nonTrimmedField = trimmedFields.find(field => req.body[field].trim() !== req.body[field]);
 
 	if (nonTrimmedField) {
-		const err = new Error(`Field: '${nonTrimmedField}' cannot start or end with a whitespace!`);
-		err.status = 422;
-		return next(err);
+		return res.status(422).json({
+			code: 422,
+			reason: 'ValidationError',
+			message: `Field: '${nonTrimmedField}' cannot start or end with a whitespace!`,
+			location: nonTrimmedField
+		});
 	}
 
 	// Check that the fields are not just whitespaces
 	const whiteSpaceField = requiredFields.find(field => field in req.body && req.body[field].trim().length === 0)
 	if (whiteSpaceField) {
-		const err = new Error(`Field: '${whiteSpaceField}' must be at least 1 characters long`);
-		err.status = 422;
-		return next(err);
+		res.status(422).json({
+			code: 422,
+			reason: 'ValidationError',
+			message: `Field: '${whiteSpaceField}' must be at least 1 characters long`,
+			location: whiteSpaceField
+		});
 	}	
 
 	const sizedFields = {
@@ -62,22 +74,24 @@ router.post('/', (req, res, next) => {
 			return 'max' in sizedFields[field] && req.body[field].trim().length > sizedFields[field].max;
 	});
 
-	if (tooSmall) {
-		const min = sizedFields[tooSmall].min;
-		const err = new Error(`Field: '${tooSmall}' must be at least ${min} characters long`);
-		err.status = 422;
-		return next(err);
-	}
-
-	if (tooLarge) {
-		const max = sizedFields[tooLarge].max;
-		const err = new Error(`Field: '${tooLarge}' must be at most ${max} characters long`);
-		err.status = 422;
-		return next(err);
+	// If the field is tooSmall or tooLarge, return 422, ValidationError and a message
+	if (tooSmall || tooLarge) {
+		return res.status(422).json({
+			code: 422,
+			reason: 'ValidationError',
+			message: tooSmall 
+				? `Field: '${tooSmall}' must be at least ${min} characters long` 
+				: `Field: '${tooLarge}' must be at most ${max} characters long`,
+			location: tooSmall || tooLarge
+		})
 	}
 
 	// Create the new user
 	let { username, email, password } = req.body;
+	// Trim everything, otherwise we throw an error before this
+	username = username.trim();
+	email = email.trim();
+	password = password.trim();
 
 	// Check if a username already exists
 	User.findOne({ username }, function(err, user) {
@@ -85,7 +99,8 @@ router.post('/', (req, res, next) => {
 			err = new Error('The username already exists');
 			err.status = 400;
 			next(err);
-		} else {
+		} 
+		else {
 			return User.hashPassword(password)
 			.then(digest => {
 				const newUser = {
@@ -101,11 +116,19 @@ router.post('/', (req, res, next) => {
 					.json({ id: result._id, username: result.username, email: result.email });
 			})
 			.catch(err => {
-				if (err.code === 11000) {
-					err = new Error('The username already exists');
-					err.status = 400;
+				if (err.reason === 'ValidationError') {
+					return res.status(err.code).json(err);
 				}
-				next(err);
+				else if (err.code === 11000) {
+					return res.status(400).json({
+						code: 400,
+						message: 'The username already exists'
+					})
+				}
+				res.status(500).json({
+					code: 500,
+					message: 'Internal Server Error'
+				});
 			});
 		}
 	});
