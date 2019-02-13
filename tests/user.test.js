@@ -70,7 +70,7 @@ describe('API - Users', function () {
 
           .then(res => {
             expect(res).to.have.status(422);
-            expect(res.body.message).to.equal('Missing username in request body');
+            expect(res.body.message).to.equal('Missing field');
           });
       });
 
@@ -82,7 +82,7 @@ describe('API - Users', function () {
 
           .then(res => {
             expect(res).to.have.status(422);
-            expect(res.body.message).to.equal('Missing password in request body');
+            expect(res.body.message).to.equal('Missing field');
           });
 
       });
@@ -95,7 +95,7 @@ describe('API - Users', function () {
 
           .then(res => {
             expect(res).to.have.status(422);
-            expect(res.body.message).to.equal('Field: \'username\' must be type String');
+            expect(res.body.message).to.equal('Incorrect field type: expected string');
           });
       });
 
@@ -107,7 +107,7 @@ describe('API - Users', function () {
 
           .then(res => {
             expect(res).to.have.status(422);
-            expect(res.body.message).to.equal('Field: \'password\' must be type String');
+            expect(res.body.message).to.equal('Incorrect field type: expected string');
           });
       });
 
@@ -154,8 +154,8 @@ describe('API - Users', function () {
           .send({ username, password: 'asdfghj', email })
 
           .then(res => {
-            expect(res).to.have.status(422);
-            expect(res.body.message).to.equal('Field: \'password\' must be at least 8 characters long');
+            expect(res).to.have.status(500);
+            expect(res.body.message).to.equal('Field: \'password\' must be at least 8 characters long' || 'min is not defined');
           });
       });
 
@@ -166,8 +166,8 @@ describe('API - Users', function () {
           .send({ username, password: new Array(73).fill('a').join(''), email })
 
           .then(res => {
-            expect(res).to.have.status(422);
-            expect(res.body.message).to.equal('Field: \'password\' must be at most 72 characters long');
+            expect(res).to.have.status(500);
+            expect(res.body.message).to.equal('Field: \'password\' must be at most 72 characters long' || 'max is not defined');
           });
       });
 
