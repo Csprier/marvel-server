@@ -9,14 +9,6 @@ const User = require('../models/user');
 const { JWT_SECRET, JWT_EXPIRY } = require('../../config');
 const router = express.Router();
 
-// Generate AuthToken for user
-const createAuthToken = (user) => {
-	return jwt.sign({ user }, JWT_SECRET, {
-		subject: user.username,
-		expiresIn: JWT_EXPIRY
-	});
-};
-
 const localAuth = passport.authenticate('local', { session: false, failWithError: true });
 router.use(bodyParser.json());
 // Login endpoint for login
@@ -38,5 +30,13 @@ router.post('/refresh', jwtAuth, (req, res, next) => {
     next(err);
   });
 });
+
+// Generate AuthToken for user
+const createAuthToken = (user) => {
+	return jwt.sign({ user }, JWT_SECRET, {
+		subject: user.username,
+		expiresIn: JWT_EXPIRY
+	});
+};
 
 module.exports = router;
