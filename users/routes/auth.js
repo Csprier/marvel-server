@@ -1,5 +1,6 @@
 const express = require('express');
 const passport = require('passport');
+const bodyParser = require('body-parser');
 const jwt = require('jsonwebtoken');
 
 // SCHEMA
@@ -26,7 +27,6 @@ router.post('/login', localAuth, (req, res) => {
 
 const jwtAuth = passport.authenticate('jwt', { session: false, failWithError: true });
 // Refresh AuthToken
-router.use('/refresh', passport.authenticate('jwt', { session: false, failWithError: true }));
 router.post('/refresh', jwtAuth, (req, res, next) => {
 	User.find({ id: req.user.id })
   .then(user => {
