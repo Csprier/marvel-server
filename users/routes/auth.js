@@ -6,7 +6,9 @@ const jwt = require('jsonwebtoken');
 // SCHEMA
 const User = require('../models/user');
 
+
 const { JWT_SECRET, JWT_EXPIRY } = require('../../config');
+
 const router = express.Router();
 
 const localAuth = passport.authenticate('local', { session: false, failWithError: true });
@@ -35,7 +37,8 @@ router.post('/refresh', jwtAuth, (req, res, next) => {
 const createAuthToken = (user) => {
 	return jwt.sign({ user }, JWT_SECRET, {
 		subject: user.username,
-		expiresIn: JWT_EXPIRY
+    expiresIn: JWT_EXPIRY,
+    algorithm: 'HS256'
 	});
 };
 

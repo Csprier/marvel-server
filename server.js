@@ -38,6 +38,14 @@ passport.use(jwtStrategy);
 app.use('/api/auth', authRouter);
 app.use('/api/user', userRouter);
 
+// Protected endpoint
+const jwtAuth = passport.authenticate('jwt', { session: false, failWithError: true });
+app.get('/api/protected', jwtAuth, (req, res) => {
+  return res.json({
+    data: 'rosebud'
+  });
+});
+
 // Catch-all Error handler
 // Add NODE_ENV check to prevent stacktrace leak
 app.use(function (err, req, res, next) {
