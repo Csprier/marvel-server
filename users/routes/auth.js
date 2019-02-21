@@ -22,9 +22,12 @@ router.post('/login', localAuth, (req, res) => {
 const jwtAuth = passport.authenticate('jwt', { session: false, failWithError: true });
 // Refresh AuthToken
 router.post('/refresh', jwtAuth, (req, res, next) => {
-	User.find({ id: req.user.id })
+  console.log(req.user);
+	User.findById(req.user.id)
   .then(user => {
-    const authToken = createAuthToken(user[0]);
+    console.log('USER', user)
+    const authToken = createAuthToken(user);
+    console.log(authToken)
     res.json({ authToken });
   })
   .catch(err => {
@@ -35,6 +38,7 @@ router.post('/refresh', jwtAuth, (req, res, next) => {
 
 // Generate AuthToken for user
 const createAuthToken = (user) => {
+  console.log('createAuthToken User', user)
 	return jwt.sign({ user }, JWT_SECRET, {
 		subject: user.username,
     expiresIn: JWT_EXPIRY,
